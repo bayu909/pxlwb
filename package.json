@@ -1,0 +1,20 @@
+{
+  "name": "pixelwebjs",
+  "version": "1.0.0",
+  "main": "pixel-web.js",
+  "scripts": {
+    "main": "node pixel-web.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "axios": "^1.7.2",
+    "colorette": "^2.0.20",
+    "faker": "^6.6.6",
+    "prompt-sync": "^4.2.0",
+    "readline": "^1.3.0"
+  }
+}
