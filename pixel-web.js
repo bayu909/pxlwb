@@ -121,7 +121,7 @@ const Main = async () => {
                 if (error === 'Provided email has blacklisted domain') {
                     // Hapus Domain yang diblacklist dari variabel domains
                     domains.splice(domains.indexOf(domain), 1);
-                    console.log(`Menghapus Domain ${domain} dari list domain...`)
+                    console.log(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Menghapus Domain ${domain} dari list domain...`));
                     console.error(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Domain telah diblacklist, menggunakan domain lain...`));
                     otpSuccess = false;
                     break;
