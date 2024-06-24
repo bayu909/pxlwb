@@ -49,16 +49,11 @@ const headers = {
   'Authorization': null
 };
 
-const Main = async () => {
-    const referralCode = readline.question(`[ ${moment().format("HH:mm:ss")} ] ` + 'Reff Code : ');
-    const jumlah = readline.question(`[ ${moment().format("HH:mm:ss")} ] ` + 'Jumlah Reff : ');
-    const maildom = readline.question(`[ ${moment().format("HH:mm:ss")} ] ` + 'Jumlah Domain (default: 20): ');
-
-    const url = "https://generator.email/";
-    const domains = [];
-
+const getDomains = async (url, maildom, domains) => {
     for (let i = 0; i < maildom; i++) {
-        console.log(`[ ${moment().format("HH:mm:ss")} ] ` + `Mengambil domain (${i+1}/` + maildom + `)`);
+        // console.log(`[ ${moment().format("HH:mm:ss")} ] ` + `Mengambil domain (${i+1}/` + maildom + `)`);
+        // pakai stdout biar bisa update baris yang sama
+        process.stdout.write(`[ ${moment().format("HH:mm:ss")} ] ` + `Mengambil domain (${i+1}/` + maildom + `)\r`);
         await new Promise((resolve, reject) => {
             request(url, (error, response, body) => {
                 if (!error && response.statusCode === 200) {
@@ -80,6 +75,21 @@ const Main = async () => {
         });
         await new Promise(resolve => setTimeout(resolve, 5000));
     }
+    console.log('\n');
+    return domains;
+}
+
+const Main = async () => {
+    const referralCode = readline.question(`[ ${moment().format("HH:mm:ss")} ] ` + 'Reff Code : ');
+    const jumlah = readline.question(`[ ${moment().format("HH:mm:ss")} ] ` + 'Jumlah Reff : ');
+    console.log(`[ ${moment().format("HH:mm:ss")} ] Domain List akan diambil dari situs penyedia domain email sementara`)
+    const maildom = readline.question(`[ ${moment().format("HH:mm:ss")} ] ` + 'Berapa kali check untuk scrape domain list? (default: 20): ');
+
+    const url = "https://generator.email/";
+    // inisiasi variabel domains sebagai array
+    let  domains = [];
+    // getDomains adalah fungsi untuk mengambil domain dari url
+    domains = await getDomains(url, maildom || 20, domains);
 
     console.log(`[ ${moment().format("HH:mm:ss")} ] ` + `Total domain: ${domains.length}`);
 
@@ -109,6 +119,9 @@ const Main = async () => {
                 break;
             } catch (error) {
                 if (error === 'Provided email has blacklisted domain') {
+                    // Hapus Domain yang diblacklist dari variabel domains
+                    domains.splice(domains.indexOf(domain), 1);
+                    console.log(`Menghapus Domain ${domain} dari list domain...`)
                     console.error(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Domain telah diblacklist, menggunakan domain lain...`));
                     otpSuccess = false;
                     break;
@@ -134,8 +147,13 @@ const Main = async () => {
             let startTime = new Date().getTime();
             do {
                 otp = await functionGetLink(email.split('@')[0], domain);
-                console.log(yellow(`[ ${moment().format("HH:mm:ss")} ] ` + `Menunggu kode verifikasi...`));
+                process.stdout.write(`[ ${moment().format("HH:mm:ss")} ] ` + `Menunggu kode verifikasi... (${new Date().getTime() - startTime}ms)\r`);
             } while (!otp && (new Date().getTime() - startTime) < 30000);
+            // Jika kode otp tidak ditemukan dalam 30 detik, lanjutkan ke email berikutnya
+            if (!otp) {
+                console.error(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Kode verifikasi tidak ditemukan dalam 30 Detik, melewati email ini...`));
+                return false;
+            }
             console.log(yellow(`[ ${moment().format("HH:mm:ss")} ] ` + `Kode verifikasi: ${otp}`));
 
             const accessToken = await makeRequest(otpVerificationURL, { email, otpCode: otp });
@@ -174,6 +192,12 @@ const Main = async () => {
             if (tryRegister) {
                 successCount++;
             } else {
+                // Jika Sisa Domain yang bisa digunakan sudah <= 5 kumpulkan lagi domain baru
+                if (domains.length <= 5) {
+                    console.log(`[ ${moment().format("HH:mm:ss")} ] ` + `Domain yang tersisa <= 2, mengambil domain baru...`);
+                    domains = await getDomains(url, maildom || 20, domains);
+                    console.log(`[ ${moment().format("HH:mm:ss")} ] ` + `Total domain: ${domains.length}`);
+                }
                 // Optionally handle the case where registration fails
                 // For example, you might want to break out of the loop or log an error
                 // keep continue the loop to the next iteration
