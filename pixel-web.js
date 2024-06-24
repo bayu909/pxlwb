@@ -5,16 +5,10 @@ const random = require('random-name');
 const randomize = require('randomatic');
 const moment = require('moment');
 const readline = require('readline-sync');
-// const fs = require('fs');
+const fs = require('fs');
 const request = require('request');
 const cheerioAdv = require('cheerio-advanced-selectors');
 const { cyan, red, yellow, green } = require('colorette');
-const { SocksProxyAgent } = require('socks-proxy-agent');
-
-const downloadProxy = async () => {
-    const response = await axios.get('https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/all.txt');
-    return response.data.split('\n');
-}
 
 const randstr = length =>
     new Promise((resolve, reject) => {
@@ -86,24 +80,6 @@ const getDomains = async (url, maildom, domains) => {
 }
 
 const Main = async () => {
-    // Fun Welcome Message from the Creator (MONKEY D. LUFFY) Tulis Nama saya di bawah ini
-    // dibawah ini adalah welcome message dari saya
-    console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Welcome to Pixelverse Bot`));
-    console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Pixelverse Bot v1.0.0`));
-    console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Created by MONKEY D. LUFFY`));
-    console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Github: https://github.com/bayu909`));
-    // console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Support me: https://saweria.co/bayu909`));
-    // console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Don't forget to follow my github and support me on saweria`));
-    console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Thanks for using my bot`));
-    console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Happy Botting`));
-    console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Bot dimulai`));
-    console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Bot akan mengambil ulang proxy setiap 1 jam`));
-    console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Bot akan mengambil domain list dari situs penyedia domain email sementara`));
-    console.log(cyan(`[ ${moment().format("HH:mm:ss")} ] ` + `Bot akan mengambil domain list sebanyak 20x Secara Default (Customable)`));
-    // Hitung waktu bot dimulai proxyList akan diambil ulang setiap 1 jam
-    let botStartingTime = new Date().getTime();
-    let proxyList = await downloadProxy();
-    let useProxy = proxyList[0];
     const referralCode = readline.question(`[ ${moment().format("HH:mm:ss")} ] ` + 'Reff Code : ');
     const jumlah = readline.question(`[ ${moment().format("HH:mm:ss")} ] ` + 'Jumlah Reff : ');
     console.log(`[ ${moment().format("HH:mm:ss")} ] Domain List akan diambil dari situs penyedia domain email sementara`)
@@ -121,113 +97,24 @@ const Main = async () => {
     const otpVerificationURL = 'https://api.pixelverse.xyz/api/auth/otp';
     const referralURL = 'https://api.pixelverse.xyz/api/referrals/set-referer/'+referralCode;
 
-    async function makeRequest(url, payload, proxy) {
-        let httpsAgent;
-        if (proxy.includes('socks4') || proxy.includes('socks5')) {
-            httpsAgent = new SocksProxyAgent(proxy);
-        }
+    async function makeRequest(url, payload) {
         try {
-            let response;
-            if (proxy.includes('http')) {
-                response = await axios.post(url, payload, { headers }, {
-                    timeout: 10000,
-                    proxy: {
-                        protocol: 'http',
-                        host: proxy.split('http://')[1].split(':')[0],
-                        port: proxy.split('http://')[1].split(':')[1]
-                    }
-                });
-            }else if (proxy.includes('socks4') || proxy.includes('socks5')) {
-                const axiosInstance = axios.create({
-                    httpAgent: httpsAgent,
-                    httpsAgent: httpsAgent,
-                    timeout: 10000
-                });
-                response = await axiosInstance.post(url, payload, { headers });
-            }
-            // console.log(response.data ? response.data : response)
-            return response;
+            const response = await axios.post(url, payload, { headers });
+            return response.data;
         } catch (error) {
-            if (error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error == 'Provided email has blacklisted domain' || error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error == 'ThrottlerException: Too Many Requests'){
-                return error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error;
-            }else{
-                return 'Bad_Proxy';
-            }
-            // console.log(error)
-            // console.error(red('Error:', error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error));
-            // throw error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error;
+            console.error(red('Error:', error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error));
+            throw error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error;
         }
-
-        // try {
-        //     const response = await axios.post(url, payload, { headers });
-        //     return response.data;
-        // } catch (error) {
-        //     console.error(red('Error:', error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error));
-        //     throw error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error;
-        // }
     }
 
-    async function verifikasiReferal (referralURL, referralPayload, headers, proxy) {
-        let httpsAgent;
-        if (proxy.includes('socks4') || proxy.includes('socks5')) {
-            httpsAgent = new SocksProxyAgent(proxy);
-        }
-        try {
-            let response;
-            if (proxy.includes('http')) {
-                response = await axios.put(referralURL, referralPayload, { headers }, {
-                    timeout: 10000,
-                    proxy: {
-                        protocol: 'http',
-                        host: proxy.split('http://')[1].split(':')[0],
-                        port: proxy.split('http://')[1].split(':')[1]
-                    }
-                });
-                console.log(response)
-            }else if (proxy.includes('socks4') || proxy.includes('socks5')) {
-                const axiosInstance = axios.create({
-                    httpAgent: httpsAgent,
-                    httpsAgent: httpsAgent,
-                    timeout: 10000
-                });
-                response = await axiosInstance.put(referralURL, referralPayload, { headers });
-                console.log(axiosInstance)
-            }
-            // console.log(response)
-            return response;
-        } catch (error) {
-            // console.log(error)
-            if (error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error == 'Provided email has blacklisted domain' || error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error == 'ThrottlerException: Too Many Requests'){
-                return error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error;
-            }else{
-                return 'Bad_Proxy';
-            }
-            // console.log(error)
-            // console.error(red('Error:', error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error));
-            // throw error.response.data.message ? error.response.data.message : error.response.data ? error.response.data : error.response ? error.response : error;
-        }
-        // const referralResponse = await axios.put(referralURL, referralPayload, { headers });
-    }
-
-        
-
-    async function registerUser(email, domain, otpPayload, referralPayload, successCount, ) {
+    async function registerUser(email, domain, otpPayload, referralPayload, successCount) {
         // Request OTP dengan try retry 3x mencoba ulang setiap 5 detik
         let retryRequestOTP = 0;
         let otpSuccess = false;
         while (true) {
-            let startTimeOTP = new Date().getTime();
             try {
-                console.log(yellow(`[ ${moment().format("HH:mm:ss")} ] ` + `Menggunakan Proxy: ${useProxy}`));
-                const askOTP = await makeRequest(otpRequestURL, otpPayload, useProxy);
-                // console.log(askOTP)
+                await makeRequest(otpRequestURL, otpPayload);
                 console.log(yellow(`[ ${moment().format("HH:mm:ss")} ] ` + `Mengirimkan permintaan kode OTP...`));
-                if (askOTP === 'Bad_Proxy') {
-                    console.error(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Proxy yang digunakan bermasalah, menggunakan proxy lain...`));
-                    useProxy = proxyList[proxyList.indexOf(useProxy)+1];
-                    proxyList.splice(proxyList.indexOf(useProxy), 1);
-                    return false;
-                };
                 otpSuccess = true;
                 break;
             } catch (error) {
@@ -243,12 +130,6 @@ const Main = async () => {
                     console.error(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Gagal mengirimkan permintaan kode OTP, melewati batas retry...`));
                     otpSuccess = false;
                     break;
-                }
-                if (new Date().getTime() - startTimeOTP >= 9500 || error == `TypeError: Cannot read properties of undefined (reading 'data')`) {
-                    console.error(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Proxy yang digunakan bermasalah, menggunakan proxy lain...`));
-                    useProxy = proxyList[proxyList.indexOf(useProxy)+1];
-                    proxyList.splice(proxyList.indexOf(useProxy), 1);
-                    return false;
                 }
                 console.error(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Gagal mengirimkan permintaan kode OTP `+ error));
                 console.log(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Mencoba Request ulang kode OTP...`));
@@ -266,39 +147,21 @@ const Main = async () => {
             let startTime = new Date().getTime();
             do {
                 otp = await functionGetLink(email.split('@')[0], domain);
-                // console.log(yellow(`[ ${moment().format("HH:mm:ss")} ] ` + `Menunggu kode verifikasi...`));
                 process.stdout.write(`[ ${moment().format("HH:mm:ss")} ] ` + `Menunggu kode verifikasi... (${new Date().getTime() - startTime}ms)\r`);
-            } while (!otp && (new Date().getTime() - startTime) < 5000);
+            } while (!otp && (new Date().getTime() - startTime) < 30000);
             // Jika kode otp tidak ditemukan dalam 30 detik, lanjutkan ke email berikutnya
             if (!otp) {
-                console.error(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Kode verifikasi tidak ditemukan dalam 5 detik, melewati email ini...`));
-                useProxy = proxyList[proxyList.indexOf(useProxy)+1];
-                proxyList.splice(proxyList.indexOf(useProxy), 1);
+                console.error(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Kode verifikasi tidak ditemukan dalam 30 Detik, melewati email ini...`));
                 return false;
             }
             console.log(yellow(`[ ${moment().format("HH:mm:ss")} ] ` + `Kode verifikasi: ${otp}`));
-            console.log(yellow(`[ ${moment().format("HH:mm:ss")} ] ` + `Menggunakan Proxy: ${useProxy}`));
-            const accessToken = await makeRequest(otpVerificationURL, { email, otpCode: otp }, useProxy);
-            if (accessToken === 'Bad_Proxy') {
-                console.error(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Proxy yang digunakan bermasalah, menggunakan proxy lain...`));
-                useProxy = proxyList[proxyList.indexOf(useProxy)+1];
-                proxyList.splice(proxyList.indexOf(useProxy), 1);
-                return false;
-            }
-            console.log(green(`[ ${moment().format("HH:mm:ss")} ] ` + `Verifikasi kode sukses...`));
-            // console.log(accessToken.data)
 
-            headers.Authorization = accessToken.data.tokens.access;
-            // console.log(headers)
-            console.log(yellow(`[ ${moment().format("HH:mm:ss")} ] ` + `Menggunakan Proxy: ${useProxy}`));
-            const referralResponse = await verifikasiReferal(referralURL, referralPayload, { headers }, useProxy);
-            if (referralResponse == 'Bad_Proxy') {
-                console.error(red(`[ ${moment().format("HH:mm:ss")} ] ` + `Proxy yang digunakan bermasalah, menggunakan proxy lain...`));
-                useProxy = proxyList[proxyList.indexOf(useProxy)+1];
-                proxyList.splice(proxyList.indexOf(useProxy), 1);
-                return false;
-            }
-            console.log(referralResponse)
+            const accessToken = await makeRequest(otpVerificationURL, { email, otpCode: otp });
+            console.log(green(`[ ${moment().format("HH:mm:ss")} ] ` + `Verifikasi kode sukses...`));
+
+            headers.Authorization = accessToken.tokens.access;
+
+            const referralResponse = await axios.put(referralURL, referralPayload, { headers });
             console.log(green(`[ ${moment().format("HH:mm:ss")} ] ` + `Sukses reff ke ${successCount}\n`));
             return true;
         } catch (error) {
@@ -309,12 +172,6 @@ const Main = async () => {
     let successCount = 1;
     try {
         while (successCount < jumlah) {
-            if (proxyList.length <= 5 || new Date().getTime() - botStartingTime >= 1800000) {
-                console.log(`[ ${moment().format("HH:mm:ss")} ] ` + `Mengambil ulang proxy list...`);
-                proxyList = await downloadProxy();
-                useProxy = proxyList[0];
-                botStartingTime = new Date().getTime();
-            }
             const randomIndex = Math.floor(Math.random() * domains.length);
             const domain = domains[randomIndex];
     
@@ -335,8 +192,8 @@ const Main = async () => {
             if (tryRegister) {
                 successCount++;
             } else {
-                // Jika Sisa Domain yang bisa digunakan sudah <= 2 kumpulkan lagi domain baru
-                if (domains.length <= 2) {
+                // Jika Sisa Domain yang bisa digunakan sudah <= 5 kumpulkan lagi domain baru
+                if (domains.length <= 5) {
                     console.log(`[ ${moment().format("HH:mm:ss")} ] ` + `Domain yang tersisa <= 2, mengambil domain baru...`);
                     domains = await getDomains(url, maildom || 20, domains);
                     console.log(`[ ${moment().format("HH:mm:ss")} ] ` + `Total domain: ${domains.length}`);
@@ -347,11 +204,7 @@ const Main = async () => {
                 continue;
             }
     
-            // await new Promise(resolve => setTimeout(resolve, (Math.random() * 10000) + 10000));
-            // Menunggu 10 detik sebelum melakukan request lagi
-            // await new Promise(resolve => setTimeout(resolve, 10000));
-            // menunggu random 5-10 detik sebelum melakukan request lagi
-            await new Promise(resolve => setTimeout(resolve, (Math.random() * 5000) + 5000));
+            await new Promise(resolve => setTimeout(resolve, (Math.random() * 10000) + 10000));
         }
     } catch (error) {
         console.error(red('[Error]:', error));
